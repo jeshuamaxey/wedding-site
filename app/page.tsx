@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 
-type Stage = 'terminal' | 'expanding' | 'loading' | 'site'
+type Stage = 'checking' | 'terminal' | 'expanding' | 'loading' | 'site'
 
 const PASSWORD = 'kerrygold'
+const STORAGE_KEY = 'sinead-jeshua-access'
 const BLOCK = '█'
 const BAR_WIDTH = 22
 
@@ -34,7 +35,7 @@ function makeBar(progress: number): string {
 }
 
 export default function Home() {
-  const [stage, setStage] = useState<Stage>('terminal')
+  const [stage, setStage] = useState<Stage>('checking')
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
   const [blink, setBlink] = useState(true)
@@ -46,6 +47,16 @@ export default function Home() {
   const [siteVisible, setSiteVisible] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Check for a previously granted access pass so returning visitors skip the gate.
+  // useLayoutEffect avoids a flash of the terminal before we know the answer.
+  useLayoutEffect(() => {
+    if (window.localStorage.getItem(STORAGE_KEY) === 'granted') {
+      setStage('site')
+      setSiteVisible(true)
+    } else {
+      setStage('terminal')
+    }
+  }, [])
 
   // Blinking cursor
   useEffect(() => {
@@ -58,9 +69,17 @@ export default function Home() {
     if (stage === 'terminal') inputRef.current?.focus()
   }, [stage])
 
+  // Lock page scroll until the gate is passed, so the terminal can't be scrolled past
+  useEffect(() => {
+    const unlocked = stage === 'site'
+    document.documentElement.style.overflow = unlocked ? 'auto' : 'hidden'
+    document.body.style.overflow = unlocked ? 'auto' : 'hidden'
+  }, [stage])
+
   const handleSubmit = useCallback(() => {
     if (input.toLowerCase() === PASSWORD) {
       setError('')
+      window.localStorage.setItem(STORAGE_KEY, 'granted')
       setStage('expanding')
       setTimeout(() => {
         setStage('loading')
@@ -110,40 +129,265 @@ export default function Home() {
   const terminalOpacity = stage === 'site' ? (siteVisible ? 0 : 1) : 1
 
   return (
-    <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', position: 'relative', background: 'var(--concrete)' }}>
+    <div style={{ width: '100vw', position: 'relative', background: 'var(--concrete)' }}>
 
-      {/* Site content — light grey background, revealed beneath terminal */}
+      {/* Site content — dark concrete poster, revealed beneath terminal */}
       <div style={{
-        position: 'fixed', inset: 0,
-        background: siteVisible ? '#F0EEEB' : 'var(--concrete)',
-        transition: 'background 1.2s ease',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontFamily: 'Futura, sans-serif',
-        color: '#0a0a0a',
+        position: 'relative',
+        minHeight: '100vh',
+        backgroundImage: 'url(/img/concrete-02.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         zIndex: 1,
       }}>
-        <div style={{ textAlign: 'center', opacity: siteVisible ? 1 : 0, transition: 'opacity 1.2s ease' }}>
-          <div style={{ fontSize: '10px', letterSpacing: '0.4em', opacity: 0.35, marginBottom: '3rem' }}>
+        {/* Vignette to pin focus and keep the poster copy legible */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 45%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.5) 100%)',
+        }} />
+
+        <div style={{
+          position: 'absolute', inset: 0,
+          display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+          padding: 'clamp(2rem, 6vw, 5rem)',
+          color: '#F0EEEB',
+          opacity: siteVisible ? 1 : 0,
+          transition: 'opacity 1.2s ease',
+        }}>
+          <div style={{ fontFamily: 'Futura, sans-serif', fontSize: '10px', letterSpacing: '0.4em', opacity: 0.55, marginBottom: '1.5rem' }}>
             SAVE THE DATE
           </div>
-          <h1 style={{
-            fontSize: 'clamp(2.5rem, 6vw, 5rem)',
-            fontWeight: 700,
-            letterSpacing: '0.06em',
-            lineHeight: 1.1,
-            textTransform: 'uppercase',
-          }}>
-            Sinéad &amp; Jeshua
+          <h1
+            style={{
+              fontFamily: "'Monument Extended', sans-serif",
+              fontSize: 'clamp(3rem, 10vw, 8rem)',
+              fontWeight: 900,
+              letterSpacing: '0.02em',
+              lineHeight: 0.95,
+              textTransform: 'uppercase',
+              maxWidth: '90vw',
+            }}
+          >
+            Sinéad
+            <br />
+            &amp; Jeshua
           </h1>
-          <div style={{ width: '100%', height: '1px', background: 'rgba(0,0,0,0.15)', margin: '2.5rem 0' }} />
-          <div style={{ fontSize: 'clamp(1rem, 2.5vw, 1.4rem)', letterSpacing: '0.25em', opacity: 0.6 }}>
-            CONNEMARA, IRELAND
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: 'clamp(1rem, 3vw, 2.5rem)',
+              flexWrap: 'wrap',
+              marginTop: 'clamp(1.5rem, 4vw, 3rem)',
+              paddingTop: 'clamp(1.5rem, 4vw, 3rem)',
+              borderTop: '1px solid rgba(240,238,235,0.3)',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Monument Extended', sans-serif",
+                fontSize: 'clamp(1.4rem, 3.5vw, 2.2rem)',
+                letterSpacing: '0.1em',
+                fontWeight: 900,
+              }}
+            >
+              28 · 08 · 2027
+            </div>
+            <div style={{ fontFamily: 'Futura, sans-serif', fontSize: 'clamp(0.9rem, 2vw, 1.2rem)', letterSpacing: '0.25em', opacity: 0.75 }}>
+              CONNEMARA, IRELAND
+            </div>
+            <div style={{ fontFamily: 'Futura, sans-serif', fontSize: '10px', letterSpacing: '0.2em', opacity: 0.4 }}>
+              A THREE-DAY EVENT — 26–28 AUGUST 2027
+            </div>
           </div>
-          <div style={{ fontSize: 'clamp(1.4rem, 3.5vw, 2rem)', letterSpacing: '0.2em', marginTop: '0.75rem', fontWeight: 700 }}>
-            28 · 08 · 2027
+        </div>
+      </div>
+
+      {/* The Couple — diagonal split of two solo shots */}
+      <div style={{ position: 'relative', minHeight: '100vh', background: '#000' }}>
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'url(/img/jesh-and-sinead/jesh-morrocco.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 68%',
+            clipPath: 'polygon(0 0, 62% 0, 38% 100%, 0 100%)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: 'url(/img/jesh-and-sinead/sb-cam-venice.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center 25%',
+            clipPath: 'polygon(62% 0, 100% 0, 100% 100%, 38% 100%)',
+          }}
+        />
+        {/* Seam line */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(105deg, transparent calc(50% - 1px), rgba(240,238,235,0.4) 50%, transparent calc(50% + 1px))',
+          }}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'linear-gradient(0deg, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 40%, rgba(0,0,0,0.05) 65%, rgba(0,0,0,0.35) 100%)',
+          }}
+        />
+
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
+            padding: 'clamp(2rem, 6vw, 5rem)',
+            color: '#F0EEEB',
+          }}
+        >
+          <div style={{ fontFamily: 'Futura, sans-serif', fontSize: '10px', letterSpacing: '0.4em', opacity: 0.6, marginBottom: '1.5rem' }}>
+            THE COUPLE
           </div>
-          <div style={{ fontSize: '10px', letterSpacing: '0.2em', opacity: 0.3, marginTop: '2.5rem' }}>
-            A THREE-DAY EVENT — 26–28 AUGUST 2027
+          <h2
+            style={{
+              fontFamily: "'Monument Extended', sans-serif",
+              fontSize: 'clamp(2.5rem, 7vw, 5.5rem)',
+              fontWeight: 900,
+              letterSpacing: '0.01em',
+              lineHeight: 0.95,
+              textTransform: 'uppercase',
+              maxWidth: '20ch',
+            }}
+          >
+            Us
+          </h2>
+
+          <p
+            style={{
+              fontFamily: 'Futura, sans-serif',
+              fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)',
+              lineHeight: 1.6,
+              maxWidth: '46ch',
+              opacity: 0.85,
+              marginTop: 'clamp(1.5rem, 3vw, 2.5rem)',
+            }}
+          >
+            We met in London in 2021. Since then we&rsquo;ve seen the world together. From Dingle to Lyme Regis,
+            truly, we&rsquo;ve seen it all. Completed it. Tick. All that&rsquo;s left is to get wed.
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              gap: '1rem',
+              marginTop: 'clamp(1.5rem, 3vw, 2.5rem)',
+              paddingTop: 'clamp(1.5rem, 3vw, 2.5rem)',
+              borderTop: '1px solid rgba(240,238,235,0.3)',
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "'Monument Extended', sans-serif",
+                fontSize: 'clamp(1rem, 1.8vw, 1.3rem)',
+                letterSpacing: '0.04em',
+                fontWeight: 900,
+                maxWidth: '38ch',
+              }}
+            >
+              We&rsquo;re getting married. You are invited.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Connemara — the place, a savage beauty */}
+      <div style={{ position: 'relative', minHeight: '100vh', background: '#000' }}>
+        <div
+          style={{
+            position: 'relative',
+            minHeight: '100vh',
+            backgroundImage: 'url(/img/connemara/lake-1.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.15) 45%, rgba(0,0,0,0.05) 65%, rgba(0,0,0,0.35) 100%)',
+            }}
+          />
+
+          <div style={{ position: 'absolute', top: 'clamp(2rem, 6vw, 5rem)', left: 'clamp(2rem, 6vw, 5rem)', fontFamily: 'Futura, sans-serif', fontSize: '11px', letterSpacing: '0.35em', color: '#F0EEEB', opacity: 0.7 }}>
+            CÉAD MÍLE FÁILTE
+          </div>
+
+          <div
+            style={{
+              position: 'relative',
+              minHeight: '100vh',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'flex-end',
+              padding: 'clamp(2rem, 6vw, 5rem)',
+              color: '#F0EEEB',
+            }}
+          >
+            <div style={{ fontFamily: 'Futura, sans-serif', fontSize: '10px', letterSpacing: '0.4em', opacity: 0.6, marginBottom: '1.5rem' }}>
+              THE PLACE
+            </div>
+            <h2
+              style={{
+                fontFamily: "'Monument Extended', sans-serif",
+                fontSize: 'clamp(3rem, 11vw, 9rem)',
+                fontWeight: 900,
+                letterSpacing: '0.01em',
+                lineHeight: 0.9,
+                textTransform: 'uppercase',
+              }}
+            >
+              A Savage
+              <br />
+              Beauty
+            </h2>
+
+            <p
+              style={{
+                fontFamily: 'Futura, sans-serif',
+                fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)',
+                lineHeight: 1.7,
+                maxWidth: '52ch',
+                opacity: 0.9,
+                marginTop: 'clamp(1.5rem, 3vw, 2.5rem)',
+                paddingTop: 'clamp(1.5rem, 3vw, 2.5rem)',
+                borderTop: '1px solid rgba(240,238,235,0.3)',
+              }}
+            >
+              We&rsquo;re all going to one of the most beautiful places in the world: Connemara.
+
+              <br />
+              <br />
+
+              It is the wild, rugged, earthy edge of Ireland. A dramatic backdrop that rewards ramblers, explorers
+              and anyone with a keen sense of beauty and awe. It has an ample supply of fresh air, Guinness and
+              poetry. Oscar Wilde described it as a &ldquo;savage beauty&rdquo;.
+
+              <br />
+              <br />
+
+              It is the scene stealing backdrop to our wedding weekend.
+            </p>
           </div>
         </div>
       </div>

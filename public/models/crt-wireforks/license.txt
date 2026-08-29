@@ -1,0 +1,11 @@
+Model Information:
+* title:	Old School CRT Monitor
+* source:	https://sketchfab.com/3d-models/old-school-crt-monitor-485c39940aa344ddb80c5a42d4e9241e
+* author:	wireforks (https://sketchfab.com/wireforks)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Old School CRT Monitor" (https://sketchfab.com/3d-models/old-school-crt-monitor-485c39940aa344ddb80c5a42d4e9241e) by wireforks (https://sketchfab.com/wireforks) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
